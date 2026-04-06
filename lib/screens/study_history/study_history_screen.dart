@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/date_utils.dart';
 import '../../services/storage_service.dart';
 import '../../widgets/neumorphic/neu_card.dart';
+import '../../widgets/neumorphic/neu_list_item.dart';
 
 class StudyHistoryScreen extends StatelessWidget {
   const StudyHistoryScreen({super.key, required this.storage});
@@ -22,7 +24,7 @@ class StudyHistoryScreen extends StatelessWidget {
             Text('Study History', style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 12),
             if (days.isEmpty)
-              const Text('No study sessions yet.')
+              const Text('No study sessions yet.', style: TextStyle(color: AppColors.subtext))
             else
               ...days.map(
                 (day) => Padding(
@@ -34,11 +36,15 @@ class StudyHistoryScreen extends StatelessWidget {
                         Text(FDateUtils.prettyDate(day.date)),
                         const SizedBox(height: 8),
                         ...day.studySessions.map(
-                          (session) => ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            dense: true,
-                            title: Text(session.subject),
-                            trailing: Text('${session.duration.toStringAsFixed(1)}h'),
+                          (session) => NeuListItem(
+                            title: session.subject,
+                            trailing: Text(
+                              '${session.duration.toStringAsFixed(1)}h',
+                              style: const TextStyle(
+                                color: AppColors.accent,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                         ),
                       ],

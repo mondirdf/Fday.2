@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/date_utils.dart';
+import '../../logic/analyzer.dart';
 import '../../models/day.dart';
 import '../../models/event.dart' as model;
 import '../../models/sleep_session.dart';
@@ -10,6 +11,7 @@ import '../../services/storage_service.dart';
 import '../../widgets/neumorphic/neu_button.dart';
 import '../../widgets/neumorphic/neu_card.dart';
 import '../../widgets/neumorphic/neu_input.dart';
+import '../../widgets/neumorphic/neu_list_item.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.storage});
@@ -26,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _eventTitleController = TextEditingController();
   final _napDurationController = TextEditingController(text: '0.5');
 
-  DateTime _selectedDate = DateTime.now();
+  final DateTime _selectedDate = DateTime.now();
   TimeOfDay? _sleepStart;
   TimeOfDay? _sleepEnd;
   TimeOfDay? _napStart;
@@ -47,15 +49,28 @@ class _HomeScreenState extends State<HomeScreen> {
       animation: widget.storage,
       builder: (context, _) {
         final day = widget.storage.dayFor(_selectedDate);
+        final studyHours = day.studySessions.fold<double>(0, (sum, s) => sum + s.duration);
+        final analysis = Analyzer.fromStudyHours(studyHours);
 
         return ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
           children: [
             Text('fday', style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Text(
+                  FDateUtils.prettyDate(_selectedDate),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(width: 10),
+                _statusChip(analysis.level),
+              ],
+            ),
+            const SizedBox(height: 8),
             Text(
-              FDateUtils.prettyDate(_selectedDate),
-              style: Theme.of(context).textTheme.bodySmall,
+              analysis.insight,
+              style: const TextStyle(color: AppColors.subtext, fontSize: 13),
             ),
             const SizedBox(height: 16),
             _buildSleepSection(day),
@@ -66,6 +81,30 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         );
       },
+    );
+  }
+
+  Widget _statusChip(String level) {
+    final color = switch (level) {
+      'Good' => const Color(0xFF2E9B75),
+      'Medium' => const Color(0xFFE8A84D),
+      _ => const Color(0xFFC35F70),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.base,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(color: AppColors.lightShadow, offset: Offset(-2, -2), blurRadius: 6),
+          BoxShadow(color: AppColors.darkShadow, offset: Offset(3, 3), blurRadius: 8),
+        ],
+      ),
+      child: Text(
+        level,
+        style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
+      ),
     );
   }
 
@@ -93,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               NeuButton(
                 onTap: _addMainSleep,
-                child: const Text('+ Save sleep'),
+                child: const Text('Set sleep'),
               ),
             ],
           ),
@@ -107,8 +146,8 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: NeuInput(
                   controller: _napDurationController,
-                  hint: 'Nap hrs (0.5)',
-                  keyboardType: TextInputType.number,
+                  hint: 'Nap duration (hrs)',
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 ),
               ),
               const SizedBox(width: 10),
@@ -116,10 +155,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => _pickTime((time) => setState(() => _napStart = time)),
                 child: Text(_napStart == null ? 'Nap start' : _napStart!.format(context)),
               ),
-              const SizedBox(width: 10),
-              NeuButton(onTap: _addNap, child: const Text('+')),
             ],
           ),
+          const SizedBox(height: 10),
+          NeuButton(onTap: _addNap, child: const Text('+ Add nap')),
           if (naps.isNotEmpty) ...[
             const SizedBox(height: 10),
             ...naps.map(_sleepTile),
@@ -145,13 +184,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: NeuInput(
                   controller: _studyDurationController,
                   hint: 'Hours',
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 ),
               ),
-              const SizedBox(width: 10),
-              NeuButton(onTap: _addStudy, child: const Text('+')),
             ],
           ),
+          const SizedBox(height: 10),
+          NeuButton(onTap: _addStudy, child: const Text('+ Add session')),
           const SizedBox(height: 10),
           ...day.studySessions.map(_studyTile),
         ],
@@ -174,10 +213,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => _pickTime((time) => setState(() => _eventTime = time)),
                 child: Text(_eventTime == null ? 'Time' : _eventTime!.format(context)),
               ),
-              const SizedBox(width: 10),
-              NeuButton(onTap: _addEvent, child: const Text('+')),
             ],
           ),
+          const SizedBox(height: 10),
+          NeuButton(onTap: _addEvent, child: const Text('+ Add event')),
           const SizedBox(height: 10),
           ...day.events.map(_eventTile),
         ],
@@ -197,39 +236,33 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _sleepTile(SleepSession session) {
-    return ListTile(
-      dense: true,
-      contentPadding: EdgeInsets.zero,
-      title: Text(
-        session.isNap ? 'Nap' : 'Main sleep',
-        style: const TextStyle(color: AppColors.text),
-      ),
-      subtitle: Text(
-        '${FDateUtils.prettyTime(session.start)} - ${FDateUtils.prettyTime(session.end)}',
-        style: const TextStyle(color: AppColors.subtext),
-      ),
+    return NeuListItem(
+      title: session.isNap ? 'Nap' : 'Main sleep',
+      subtitle: '${FDateUtils.prettyTime(session.start)} - ${FDateUtils.prettyTime(session.end)}',
       trailing: Text(
         '${(session.duration.inMinutes / 60).toStringAsFixed(1)}h',
-        style: const TextStyle(color: AppColors.accent),
+        style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700),
       ),
     );
   }
 
   Widget _studyTile(StudySession study) {
-    return ListTile(
-      dense: true,
-      contentPadding: EdgeInsets.zero,
-      title: Text(study.subject),
-      trailing: Text('${study.duration.toStringAsFixed(1)}h'),
+    return NeuListItem(
+      title: study.subject,
+      trailing: Text(
+        '${study.duration.toStringAsFixed(1)}h',
+        style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700),
+      ),
     );
   }
 
   Widget _eventTile(model.Event event) {
-    return ListTile(
-      dense: true,
-      contentPadding: EdgeInsets.zero,
-      title: Text(event.title),
-      trailing: Text(FDateUtils.prettyTime(event.time)),
+    return NeuListItem(
+      title: event.title,
+      trailing: Text(
+        FDateUtils.prettyTime(event.time),
+        style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700),
+      ),
     );
   }
 
@@ -247,7 +280,9 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
-    if (picked != null) onPick(picked);
+    if (picked != null) {
+      onPick(picked);
+    }
   }
 
   DateTime _composeDateTime(TimeOfDay time) {
@@ -261,7 +296,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _addMainSleep() async {
-    if (_sleepStart == null || _sleepEnd == null) return;
+    if (_sleepStart == null || _sleepEnd == null) {
+      return;
+    }
+
     await widget.storage.upsertMainSleep(
       date: _selectedDate,
       start: _composeDateTime(_sleepStart!),
@@ -270,9 +308,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _addNap() async {
-    if (_napStart == null) return;
+    if (_napStart == null) {
+      return;
+    }
+
     final duration = double.tryParse(_napDurationController.text.trim());
-    if (duration == null || duration <= 0) return;
+    if (duration == null || duration <= 0) {
+      return;
+    }
+
     await widget.storage.addNap(
       date: _selectedDate,
       start: _composeDateTime(_napStart!),
@@ -283,7 +327,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _addStudy() async {
     final subject = _subjectController.text.trim();
     final duration = double.tryParse(_studyDurationController.text.trim());
-    if (subject.isEmpty || duration == null || duration <= 0) return;
+    if (subject.isEmpty || duration == null || duration <= 0) {
+      return;
+    }
 
     await widget.storage.addStudy(
       date: _selectedDate,
@@ -295,7 +341,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _addEvent() async {
     final title = _eventTitleController.text.trim();
-    if (title.isEmpty || _eventTime == null) return;
+    if (title.isEmpty || _eventTime == null) {
+      return;
+    }
 
     await widget.storage.addEvent(
       date: _selectedDate,
