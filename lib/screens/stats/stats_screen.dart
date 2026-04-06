@@ -47,9 +47,18 @@ class StatsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Study level: ${analysis.level}', style: const TextStyle(color: AppColors.accent)),
+                  Text(
+                    'Daily insight: ${analysis.level}',
+                    style: const TextStyle(
+                      color: AppColors.accent,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  Text(analysis.insight),
+                  Text(
+                    analysis.insight,
+                    style: const TextStyle(color: AppColors.subtext),
+                  ),
                 ],
               ),
             ),
@@ -58,7 +67,7 @@ class StatsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Last 7 days'),
+                  const Text('Last 7 days study'),
                   const SizedBox(height: 10),
                   ...weekDays.map((day) => _barRow(
                         date: FDateUtils.prettyDate(day.date),
@@ -79,7 +88,13 @@ class StatsScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [Text(label), Text(value, style: const TextStyle(color: AppColors.accent))],
+        children: [
+          Text(label),
+          Text(
+            value,
+            style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700),
+          ),
+        ],
       ),
     );
   }
@@ -92,13 +107,13 @@ class StatsScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('$date • ${value.toStringAsFixed(1)}h', style: const TextStyle(fontSize: 12)),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: ratio,
               minHeight: 8,
-              backgroundColor: AppColors.base,
+              backgroundColor: AppColors.background,
               valueColor: const AlwaysStoppedAnimation(AppColors.accent),
             ),
           ),

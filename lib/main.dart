@@ -53,16 +53,29 @@ class _AppShellState extends State<AppShell> {
 
     return Scaffold(
       body: SafeArea(child: IndexedStack(index: _index, children: pages)),
-      bottomNavigationBar: NavigationBar(
-        backgroundColor: Colors.black,
-        selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.bar_chart_outlined), label: 'Stats'),
-          NavigationDestination(icon: Icon(Icons.menu_book_outlined), label: 'Study'),
-          NavigationDestination(icon: Icon(Icons.event_note_outlined), label: 'Events'),
-        ],
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        decoration: BoxDecoration(
+          color: AppColors.base,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(color: AppColors.lightShadow, offset: Offset(-3, -3), blurRadius: 8),
+            BoxShadow(color: AppColors.darkShadow, offset: Offset(6, 6), blurRadius: 12),
+          ],
+        ),
+        child: NavigationBar(
+          backgroundColor: Colors.transparent,
+          indicatorColor: AppColors.primary.withOpacity(0.5),
+          selectedIndex: _index,
+          elevation: 0,
+          onDestinationSelected: (value) => setState(() => _index = value),
+          destinations: const [
+            NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
+            NavigationDestination(icon: Icon(Icons.bar_chart_outlined), label: 'Stats'),
+            NavigationDestination(icon: Icon(Icons.menu_book_outlined), label: 'Study'),
+            NavigationDestination(icon: Icon(Icons.event_note_outlined), label: 'Events'),
+          ],
+        ),
       ),
     );
   }

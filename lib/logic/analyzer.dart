@@ -9,21 +9,21 @@ class Analyzer {
   static AnalysisResult fromStudyHours(double hours) {
     if (hours <= 2) {
       return AnalysisResult(
-        level: 'bad',
-        insight: 'Very light study day. Try at least one focused session tomorrow.',
+        level: 'Bad',
+        insight: 'Low study output today. Add one focused block to recover momentum.',
       );
     }
 
     if (hours <= 5) {
       return AnalysisResult(
-        level: 'medium',
-        insight: 'Balanced effort. One extra deep-work block can push this higher.',
+        level: 'Medium',
+        insight: 'Steady progress. One extra deep session can make this a strong day.',
       );
     }
 
     return AnalysisResult(
-      level: 'good',
-      insight: 'Excellent focus today. Keep consistency and avoid burnout.',
+      level: 'Good',
+      insight: 'Great focus today. Keep this consistency and protect your energy.',
     );
   }
 }
